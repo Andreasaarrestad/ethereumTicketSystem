@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./TicketIssuer.sol";
 import "./PosterIssuer.sol";
 
-contract TicketBookingSystem is Ownable {
+contract TicketBookingSystem  {
+    address private _owner;
     string private _showTitle;
     uint16 private _numRows; // max ticket y coordinate
     uint16[] private _numCols; // max ticket x coordinate given y coordinate
@@ -15,22 +15,23 @@ contract TicketBookingSystem is Ownable {
     TicketIssuer private _ticketIssuer;
 
     constructor(string memory showTitle, uint16 numRows, uint16[] memory numCols, uint16[] memory rowPrice) {
+        _owner = msg.sender;
         _showTitle = showTitle;
         _numRows = numRows;
         _numCols = numCols;
         _rowPrice = rowPrice;
-        _ticketIssuer = new TicketIssuer();
-        _posterIssuer = new PosterIssuer();
+        _ticketIssuer = new TicketIssuer(address(this));
+        _posterIssuer = new PosterIssuer(address(this));
     }
 
     function buy(uint16 seatRow, uint16 seatNumber, uint40 date) external payable returns (uint256) {
         require(
-            msg.value >= _rowPrice[seatRow], 
+            msg.value >= _rowPrice[seatRow-1], 
             "You need to pay more"
         );
         uint256 newTokenID = _toID(seatRow, seatNumber, date);
         _ticketIssuer.buy(msg.sender, newTokenID, "https://seatplan.com/");
-        payable(owner()).transfer(_rowPrice[seatRow]);
+        payable(_owner).transfer(_rowPrice[seatRow-1]);
         return newTokenID;
     }
 
@@ -67,7 +68,7 @@ contract TicketBookingSystem is Ownable {
             "Only the owner of the ticket can validate"
         );
         require(
-            1 <= seatRow && seatRow <= _numRows && 1 <= seatNumber && seatNumber <= _numCols[seatRow],
+            1 <= seatRow && seatRow <= _numRows && 1 <= seatNumber && seatNumber <= _numCols[seatRow-1],
             "Seat is unvalid"
         );
 
@@ -75,12 +76,12 @@ contract TicketBookingSystem is Ownable {
         _posterIssuer.mint(ticketOwner, tokenID);
     }
 
-    function tradeTicket(address from, address to, uint256 tokenID) external {
+    function tradeTicket(address to, uint256 tokenID) external {
         require(
             _ticketIssuer.ownerOf(tokenID) == msg.sender,
             "Only the owner of the ticket can transfer"
         );
-        _ticketIssuer.safeTransferFrom(from, to, tokenID);
+        _ticketIssuer.safeTransferFrom(msg.sender, to, tokenID);
     }
 
     function verifyTicket(uint256 tokenID) public view returns (address) {
@@ -91,7 +92,8 @@ contract TicketBookingSystem is Ownable {
         return _posterIssuer.ownerOf(tokenID);
     }
 
-    function cancelShow(uint40 date) external onlyOwner {
+    function cancelShow(uint40 date) external  {
+        require(msg.sender == _owner,"Only the owner of the show can cancel it");
         _cancelledDates[date] = true;
     }
 
