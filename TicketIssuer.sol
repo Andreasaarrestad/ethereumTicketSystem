@@ -11,11 +11,7 @@ contract TicketIssuer is ERC721, Ownable {
         return _exists(tokenID);
     }
 
-    function buy(
-        address recepient,
-        uint256 tokenID,
-        string memory link
-    ) public onlyOwner {
+    function mint(address recepient, uint256 tokenID, string memory link) public onlyOwner {
         _safeMint(recepient, tokenID, bytes(link));
     }
 
