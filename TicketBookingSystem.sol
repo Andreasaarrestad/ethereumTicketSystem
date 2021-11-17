@@ -38,7 +38,7 @@ contract TicketBookingSystem  {
             "You need to pay more"
         );
         uint256 newTokenID = _toID(seatRow, seatNumber, date);
-        _ticketIssuer.buy(msg.sender, newTokenID, link);
+        _ticketIssuer.buy(msg.sender, newTokenID, _link);
         payable(_owner).transfer(_rowPrice[seatRow-1]);
         return newTokenID;
     }
