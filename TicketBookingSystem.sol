@@ -14,14 +14,13 @@ contract TicketBookingSystem  {
     string private _link;
     uint16 private _numRows; // max ticket y coordinate
     uint16[] private _numCols; // max ticket x coordinate given y coordinate
-    uint16[] private _rowPrice;
-    mapping(uint40 => bool) private _cancelledDates;
+    uint32[] private _rowPrice;
     mapping(address => address) private _offeredTickets;
     mapping(uint256 => Swap) private _marketplace;  // offeredTokenID => Swap
     PosterIssuer private _posterIssuer;
     TicketIssuer private _ticketIssuer;
 
-    constructor(string memory showTitle, string memory link, uint16 numRows, uint16[] memory numCols, uint16[] memory rowPrice) {
+    constructor(string memory showTitle, string memory link, uint16 numRows, uint16[] memory numCols, uint32[] memory rowPrice) {
         _owner = msg.sender;
         _showTitle = showTitle;
         _link = link;
@@ -31,7 +30,7 @@ contract TicketBookingSystem  {
         _ticketIssuer = new TicketIssuer(address(this));
         _posterIssuer = new PosterIssuer(address(this));
     }
-
+    
     function buy(uint16 seatRow, uint16 seatNumber, uint40 date) external payable returns (uint256) {
         require(
             msg.value >= _rowPrice[seatRow-1], 
@@ -43,18 +42,23 @@ contract TicketBookingSystem  {
         return newTokenID;
     }
 
-    function refund(uint256 tokenID) external {
-        (uint160 showID, uint40 date, uint16 seatRow, uint16 seatNumber) = _fromID(tokenID);
-        require(
-            _ticketIssuer.ownerOf(tokenID) == msg.sender,
-            "Only the owner of the ticket can refund"
+    function refund(uint40 date) external payable {
+         require(
+            msg.sender == _owner,
+            "Only the owner can refund the tickets"
         );
-        require(
-            _cancelledDates[date], 
-            "This show is not cancelled"
-        );
-        payable(msg.sender).transfer(_rowPrice[seatRow]);
-        _ticketIssuer.burn(tokenID); // To prohibit a user to refund an infinite amount of times
+        
+        for (uint16 seatRow = 1; seatRow <= _numRows; seatRow++) {
+             for (uint16 seatNumber = 1; seatNumber <= _numCols[seatRow-1]; seatNumber++) {
+                uint256 tokenID = _toID(seatRow, seatNumber, date);
+                if (_ticketIssuer.exists(tokenID) == true) {
+                    address ticketOwner = _ticketIssuer.ownerOf(tokenID);
+                    uint40 ticketPrice = _rowPrice[seatRow-1];
+                    payable(ticketOwner).transfer(ticketPrice);
+                    _ticketIssuer.burn(tokenID);
+                }
+            }
+        }
     }
 
     function validate(uint256 tokenID) external {
@@ -141,14 +145,6 @@ contract TicketBookingSystem  {
 
     function verifyPoster(uint256 tokenID) external view returns (address) {
         return _posterIssuer.ownerOf(tokenID);
-    }
-
-    function cancelShow(uint40 date) external  {
-        require(
-            msg.sender == _owner,
-            "Only the owner of the show can cancel it"
-        );
-        _cancelledDates[date] = true;
     }
 
     function _fromID(uint256 tokenID) private pure returns (uint160, uint40, uint16, uint16) {
