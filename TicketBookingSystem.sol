@@ -11,6 +11,7 @@ contract TicketBookingSystem  {
     }
     address private _owner;
     string private _showTitle;
+    string private _link;
     uint16 private _numRows; // max ticket y coordinate
     uint16[] private _numCols; // max ticket x coordinate given y coordinate
     uint16[] private _rowPrice;
@@ -20,9 +21,10 @@ contract TicketBookingSystem  {
     PosterIssuer private _posterIssuer;
     TicketIssuer private _ticketIssuer;
 
-    constructor(string memory showTitle, uint16 numRows, uint16[] memory numCols, uint16[] memory rowPrice) {
+    constructor(string memory showTitle, string memory link, uint16 numRows, uint16[] memory numCols, uint16[] memory rowPrice) {
         _owner = msg.sender;
         _showTitle = showTitle;
+        _link = link;
         _numRows = numRows;
         _numCols = numCols;
         _rowPrice = rowPrice;
@@ -36,7 +38,7 @@ contract TicketBookingSystem  {
             "You need to pay more"
         );
         uint256 newTokenID = _toID(seatRow, seatNumber, date);
-        _ticketIssuer.buy(msg.sender, newTokenID, "https://seatplan.com/");
+        _ticketIssuer.buy(msg.sender, newTokenID, link);
         payable(_owner).transfer(_rowPrice[seatRow-1]);
         return newTokenID;
     }
