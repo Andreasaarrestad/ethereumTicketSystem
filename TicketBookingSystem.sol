@@ -5,12 +5,18 @@ import "./TicketIssuer.sol";
 import "./PosterIssuer.sol";
 
 contract TicketBookingSystem  {
+    struct Swap {
+        uint256 requestedTokenID;
+        uint16 requestedPrice;
+    }
     address private _owner;
     string private _showTitle;
     uint16 private _numRows; // max ticket y coordinate
     uint16[] private _numCols; // max ticket x coordinate given y coordinate
     uint16[] private _rowPrice;
     mapping(uint40 => bool) private _cancelledDates;
+    mapping(address => address) private _offeredTickets;
+    mapping(uint256 => Swap) private _marketplace;  // offeredTokenID => Swap
     PosterIssuer private _posterIssuer;
     TicketIssuer private _ticketIssuer;
 
@@ -75,13 +81,56 @@ contract TicketBookingSystem  {
         _ticketIssuer.burn(tokenID);
         _posterIssuer.mint(ticketOwner, tokenID);
     }
-
-    function tradeTicket(address to, uint256 tokenID) external {
+    
+    function putOnMarket( uint256 offeredTokenID, uint256 requestedTokenID, uint16 requestedPrice) external {
         require(
-            _ticketIssuer.ownerOf(tokenID) == msg.sender,
-            "Only the owner of the ticket can transfer"
+             (requestedTokenID != 0 && requestedPrice == 0) || (requestedTokenID == 0 && requestedPrice != 0), 
+            "Either a ticket or ether must be requested"
         );
-        _ticketIssuer.safeTransferFrom(msg.sender, to, tokenID);
+        require(
+            _ticketIssuer.ownerOf(offeredTokenID) == msg.sender, 
+            "Only the owner of the ticket can trade it"
+        );
+        Swap memory swap = Swap(requestedTokenID, requestedPrice);
+        _marketplace[offeredTokenID] = swap;
+    }
+
+    function tradeTicket(uint256 requestedTokenID, uint256 offeredTokenID) external payable {
+        require(
+            _marketplace[requestedTokenID].requestedTokenID != 0 || _marketplace[requestedTokenID].requestedPrice != 0,
+            "Requested ticket is not on the marketplace"
+        );
+        
+        // Trade token for token
+        if (_marketplace[requestedTokenID].requestedTokenID != 0) {
+            require(
+                _ticketIssuer.ownerOf(offeredTokenID) == msg.sender, 
+                "Only the owner of the ticket can trade it"
+            );
+            require(
+                offeredTokenID == _marketplace[requestedTokenID].requestedTokenID, 
+                "Required ticket not provided"
+            );
+            _ticketIssuer.transfer(
+                _ticketIssuer.ownerOf(requestedTokenID), 
+                offeredTokenID
+            );
+        }
+
+        // Trade token for ether
+        else {
+            require(
+                msg.value >= _marketplace[requestedTokenID].requestedPrice,
+                "Not enough ether provided"
+            );
+            payable(_ticketIssuer.ownerOf(requestedTokenID)).transfer(_marketplace[requestedTokenID].requestedPrice);
+        }
+  
+        _ticketIssuer.transfer(
+            msg.sender, 
+            requestedTokenID
+        );
+        delete _marketplace[requestedTokenID];
     }
 
     function verifyTicket(uint256 tokenID) public view returns (address) {
@@ -93,7 +142,10 @@ contract TicketBookingSystem  {
     }
 
     function cancelShow(uint40 date) external  {
-        require(msg.sender == _owner,"Only the owner of the show can cancel it");
+        require(
+            msg.sender == _owner,
+            "Only the owner of the show can cancel it"
+        );
         _cancelledDates[date] = true;
     }
 
