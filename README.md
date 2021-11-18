@@ -1,5 +1,5 @@
 # Ethereum Ticket System
-Ticket booking system that issues NFTs to customers by using smart contracts on the Ethereum blockchain.
+Ticket booking system that issues tickets as NFTs to customers by using smart contracts on the Ethereum blockchain.
 
 ## Modeling and scoping
 A TicketBookingSystem instance is modelled as a show with the same show title, the same 
