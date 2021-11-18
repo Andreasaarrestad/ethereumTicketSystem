@@ -1,6 +1,6 @@
 # Ethereum Ticket System
 
-## Modelation
+## Modeling and scoping
 A TicketBookingSystem instance is modelled as a show with the same show title, the same 
 seat layout, the same prices for each row and a set of available timestamp. The instance is 
 therefore not constrained to one specific date and time, and can be re-used multiple times. 
