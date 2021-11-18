@@ -5,6 +5,13 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract TicketIssuer is ERC721 {
     address private _admin;
+
+    modifier onlyAdmin {
+      require(
+        msg.sender == _admin,
+        "Not authorized to handle tickets"
+      );_;
+    }
     
     constructor(address admin) ERC721("Ticket", "TICK") {
           _admin = admin;
@@ -14,27 +21,15 @@ contract TicketIssuer is ERC721 {
         return _exists(tokenID);
     }
 
-    function buy(address recepient, uint256 tokenID, string memory link) public {
-        require(
-            msg.sender == _admin, 
-            "Only the administrator can mint new tickets"
-        );
+    function buy(address recepient, uint256 tokenID, string memory link) onlyAdmin public {
         _safeMint(recepient, tokenID, bytes(link));
     }
 
-    function burn(uint256 ticketID) public {
-        require(
-            msg.sender == _admin, 
-            "Only the administrator can burn tickets"
-        );
+    function burn(uint256 ticketID) onlyAdmin public {
         _burn(ticketID);
     }
     
-    function transfer(address recepient, uint256 tokenID) public {
-        require(
-            msg.sender == _admin, 
-            "Only the administrator can transfer tickets"
-        );
+    function transfer(address recepient, uint256 tokenID) onlyAdmin public {
         _transfer(ownerOf(tokenID), recepient, tokenID);
     }
 }
