@@ -9,7 +9,7 @@ contract TicketBookingSystem  {
     address private _owner;
     string private _showTitle;
     string private _link;
-    uint32[] private _rowPrice;
+    uint64[] private _rowPrice;
     uint16[] private _numCols; // max ticket x coordinate given y coordinate
     uint16 private _numRows; // max ticket y coordinate
     mapping(uint40 => uint8) private _activeTimestamps; // unix time[s] => 0/1
@@ -19,7 +19,7 @@ contract TicketBookingSystem  {
 
     struct Swap {
         uint256 requestedTokenID;
-        uint32 requestedPrice;
+        uint64 requestedPrice;
     }
 
     modifier onlyOwner {
@@ -33,21 +33,21 @@ contract TicketBookingSystem  {
         address seller, 
         uint256 offeredTokenID, 
         uint256 requestedTokenID, 
-        uint32 requestedPrice
+        uint64 requestedPrice
     );
     event Trade(
         address seller, 
         uint256 tokenSentToSeller, 
         address buyer, 
         uint256 tokenSentToBuyer, 
-        uint32 price
+        uint64 price
     );
     
     constructor(
         string memory showTitle,
         string memory link,
         uint40[] memory timestamps,
-        uint32[] memory rowPrice, 
+        uint64[] memory rowPrice, 
         uint16[] memory numCols
     ){
         _owner = msg.sender;
@@ -135,7 +135,7 @@ contract TicketBookingSystem  {
         _posterIssuer.mint(ticketOwner, tokenID);
     }
     
-    function putOnMarket(uint256 offeredTokenID, uint256 requestedTokenID, uint32 requestedPrice) external {
+    function putOnMarket(uint256 offeredTokenID, uint256 requestedTokenID, uint64 requestedPrice) external {
         require(
              (requestedTokenID != 0 && requestedPrice == 0) || (requestedTokenID == 0 && requestedPrice != 0), 
             "Ether or a ticket must be requested"
@@ -155,7 +155,7 @@ contract TicketBookingSystem  {
             "Requested ticket is not on the marketplace"
         );
         address seller = _ticketIssuer.ownerOf(requestedTokenID);
-        uint32 price = _marketplace[requestedTokenID].requestedPrice;
+        uint64 price = _marketplace[requestedTokenID].requestedPrice;
         
         // Trade token for token
         if (_marketplace[requestedTokenID].requestedTokenID != 0) {
