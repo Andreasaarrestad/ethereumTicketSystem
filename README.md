@@ -8,7 +8,7 @@ therefore not constrained to one specific date and time, and can be re-used mult
 
 Each tokenID is unique for each show title, timestamp, row number and seat number. This is 
 done by exploiting the fact that the tokenID is 256 bits long. This means that the 160-bit 
-TicketBookingSystem address (which uniquely represents a show title), a 48-bit timestamp
+TicketBookingSystem address (which uniquely represents a show title), a 40-bit timestamp
 field, a 16-bit row number and a 16-bit seat number can all be encoded inside the tokenID. 
 The link, a string, can then easily be passed and retrieved from the data field in the 
 ticket by simply translating between string and bytes32. It is assumed that the link contains
