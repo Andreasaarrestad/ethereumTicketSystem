@@ -19,7 +19,7 @@ We've thought of the system as an API to the ticket system backend, and hence, t
 formats are efficient but not that user friendly. E.g., unix for timestamps.  
 
 TokenID format:
->16 zeros + 160-bit show ID + 48-bit timestamp + 16-bit seat row + 16-bit seat number
+>16 zeros + 16-bit seat number + 16-bit seat row number + 48-bit timestamp + 160-bit show ID  
 
 ## Trading Functionality 
 Trading is implemented by letting one person put their token up for sale or trade by 
