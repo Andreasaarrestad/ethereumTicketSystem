@@ -88,7 +88,7 @@ contract TicketBookingSystem  {
         the seat for the given show and timestamp is taken. */
         uint256 newTokenID = _toID(seatRow, seatNumber, timestamp);
         _ticketIssuer.buy(msg.sender, newTokenID, _link);
-        uint40 ticketPrice = _rowPrice[seatRow-1];
+        uint64 ticketPrice = _rowPrice[seatRow-1];
         payable(_owner).transfer(ticketPrice);
         return newTokenID;
     }
